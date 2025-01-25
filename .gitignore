@@ -1,0 +1,67 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Diagnostic reports
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+.DS_Store
+
+# Coverage and Test Reports
+coverage/
+*.lcov
+.nyc_output
+lib-cov/
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Build and Cache
+build/
+.cache/
+dist/
+out/
+.vite/
+.next/
+.nuxt/
+.vuepress/dist/
+
+# Compiled binaries
+build/Release
+
+# TypeScript Cache
+*.tsbuildinfo
+
+# Optional npm and Yarn files
+.npm
+.yarn-integrity
+*.tgz
+
+# Environment Files
+.env
+.env.test
+
+# Debugging tools and logs
+chrome_debug.log
+chrome_debug.log.*
+
+# Electron cache
+.electron/
+
+# Packaged application files
+*.dmg
+*.exe
+*.app
+*.msi
+*.deb
+*.rpm

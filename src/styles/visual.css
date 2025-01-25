@@ -1,0 +1,37 @@
+@font-face {
+    font-family: 'Stalemate';
+    src: url('../../public/fonts/Stalemate-Regular.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.visual-container {
+    position: relative; /* Allows child absolute positioning */
+    width: 80%;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    background-color: black;
+    margin-top: 0px;
+}
+
+.visualizer-canvas {
+    position: absolute; /* Freely move the canvas */
+    top: 10px; /* Adjust as needed */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%); /* Center horizontally */
+    width: 35%;
+    height: 200px;
+    border: 2px solid rgb(39, 39, 39);
+    background-color: black;
+}
+
+.handwriting-text {
+    font-family: 'Stalemate', cursive;
+    font-size: 20px;
+    color: var(--theme-color);
+    text-align: center;
+    margin-top: -182px; /* Adjust as needed */
+    z-index: 500;
+    transform: scaleX(1.5);
+}
