@@ -42,6 +42,24 @@ contextBridge.exposeInMainWorld("electron", {
         return []; // Fallback to an empty array on error
       }
     },
+    rename: async (oldPath, newPath) => {
+      try {
+        const result = await ipcRenderer.invoke("fs:rename", { oldPath, newPath });
+        return result;
+      } catch (error) {
+        console.error("Error renaming file:", error);
+        return { success: false, error: error.message };
+      }
+    },
+    delete: async (filePath) => {
+      try {
+        const result = await ipcRenderer.invoke("fs:delete", filePath);
+        return result;
+      } catch (error) {
+        console.error("Error deleting file:", error);
+        return { success: false, error: error.message };
+      }
+    },
   },
 
   // Audio playback functionality
@@ -51,7 +69,8 @@ contextBridge.exposeInMainWorld("electron", {
         const formattedPath = formatFilePath(filePath); // Format the path
         console.log(`Attempting to play: ${formattedPath}`);
         audio.src = formattedPath;
-        audio.play()
+        audio
+          .play()
           .then(() => {
             console.log(`Started playing: ${formattedPath}`);
           })

@@ -6,6 +6,8 @@ const Music = ({ isVisible }) => {
   const [songs, setSongs] = useState([]);
   const [selectedSong, setSelectedSong] = useState(null);
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, song: null });
+  const [renameModal, setRenameModal] = useState({ visible: false, oldName: "", newName: "" });
+  const [deleteModal, setDeleteModal] = useState({ visible: false, song: "" });
 
   // Load songs from the current playlist folder
   const loadSongs = async () => {
@@ -55,18 +57,34 @@ const Music = ({ isVisible }) => {
     console.log(`Playing: ${song}`);
     const baseDir = window.electron.baseDir || "";
     const songPath = path.join(baseDir, currentPlaylist, song);
-  
+
     try {
       window.electron.audio.play(songPath); // Directly pass the clean path
       console.log(`Started playing: ${songPath}`);
     } catch (error) {
       console.error("Error starting playback:", error);
     }
-  }
+  };
 
   const handleRightClick = (event, song) => {
     event.preventDefault();
-    setContextMenu({ visible: true, x: event.clientX, y: event.clientY, song });
+
+    // Get the window height and click position
+    const windowHeight = window.innerHeight;
+    const contextMenuHeight = 150; // Approximate height of the context menu (adjust if needed)
+    const isLowerHalf = event.clientY > windowHeight * 0.6;
+
+    // Set the context menu position dynamically
+    const yPosition = isLowerHalf
+      ? event.clientY - contextMenuHeight // Render upwards
+      : event.clientY; // Render downwards
+
+    setContextMenu({
+      visible: true,
+      x: event.clientX,
+      y: yPosition,
+      song,
+    });
   };
 
   const handleAddToPlaylist = (playlist) => {
@@ -79,28 +97,35 @@ const Music = ({ isVisible }) => {
     setContextMenu({ visible: false });
   };
 
-  const handleRename = () => {
-    const baseDir = window.electron.baseDir || "";
-    const oldPath = path.join(baseDir, currentPlaylist, contextMenu.song);
-    const newName = prompt("Enter new name for the song:", contextMenu.song);
+  const submitRename = async () => {
+    if (!renameModal.newName.trim()) return;
 
-    if (newName) {
-      const newPath = path.join(baseDir, currentPlaylist, newName);
-      window.electron.fileSystem.rename(oldPath, newPath);
+    const baseDir = window.electron.baseDir || "";
+    const oldPath = path.join(baseDir, currentPlaylist, renameModal.oldName);
+    const newPath = path.join(baseDir, currentPlaylist, renameModal.newName.trim());
+
+    const result = await window.electron.fileSystem.rename(oldPath, newPath);
+    if (result.success) {
+      console.log(`File renamed to ${renameModal.newName}`);
       loadSongs();
+    } else {
+      console.error("Rename failed:", result.error);
     }
-    setContextMenu({ visible: false });
+    setRenameModal({ visible: false, oldName: "", newName: "" });
   };
 
-  const handleDelete = () => {
+  const confirmDelete = async () => {
     const baseDir = window.electron.baseDir || "";
-    const songPath = path.join(baseDir, currentPlaylist, contextMenu.song);
+    const songPath = path.join(baseDir, currentPlaylist, deleteModal.song);
 
-    if (window.confirm(`Are you sure you want to delete "${contextMenu.song}"?`)) {
-      window.electron.fileSystem.delete(songPath);
+    const result = await window.electron.fileSystem.delete(songPath);
+    if (result.success) {
+      console.log(`File deleted: ${deleteModal.song}`);
       loadSongs();
+    } else {
+      console.error("Delete failed:", result.error);
     }
-    setContextMenu({ visible: false });
+    setDeleteModal({ visible: false, song: "" });
   };
 
   const closeContextMenu = () => {
@@ -166,12 +191,40 @@ const Music = ({ isVisible }) => {
               Add to Playlist {playlist}
             </div>
           ))}
-          <div className="context-menu-item" onClick={handleRename}>
+          <div
+            className="context-menu-item"
+            onClick={() => setRenameModal({ visible: true, oldName: contextMenu.song, newName: "" })}
+          >
             Rename
           </div>
-          <div className="context-menu-item" onClick={handleDelete}>
+          <div
+            className="context-menu-item"
+            onClick={() => setDeleteModal({ visible: true, song: contextMenu.song })}
+          >
             Delete
           </div>
+        </div>
+      )}
+
+      {renameModal.visible && (
+        <div className="modal">
+          <h3>Rename File</h3>
+          <input
+            type="text"
+            value={renameModal.newName}
+            onChange={(e) => setRenameModal({ ...renameModal, newName: e.target.value })}
+            placeholder="Enter new file name"
+          />
+          <button onClick={submitRename}>Rename</button>
+          <button onClick={() => setRenameModal({ visible: false, oldName: "", newName: "" })}>Cancel</button>
+        </div>
+      )}
+
+      {deleteModal.visible && (
+        <div className="modal">
+          <h3>Are you sure you want to delete "{deleteModal.song}"?</h3>
+          <button onClick={confirmDelete}>Delete</button>
+          <button onClick={() => setDeleteModal({ visible: false, song: "" })}>Cancel</button>
         </div>
       )}
     </div>

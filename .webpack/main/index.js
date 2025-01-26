@@ -1059,12 +1059,9 @@ app.on("window-all-closed", () => {
 // IPC handler for opening the file dialog
 ipcMain.handle("dialog:openFile", async (_, options) => {
   try {
-    console.log("Opening dialog with options:", options);
     const result = await dialog.showOpenDialog(BrowserWindow.getFocusedWindow(), options);
-    console.log("Dialog result:", result);
     return result; // Return the selected files
   } catch (error) {
-    console.error("Error opening dialog:", error);
     return {
       success: false,
       error: error.message
@@ -1078,15 +1075,11 @@ ipcMain.handle("fs:copyFile", async (_, {
   destination
 }) => {
   try {
-    const resolvedSource = path.resolve(source); // Resolve file paths
-    const resolvedDestination = path.resolve(destination);
-    fs.copyFileSync(resolvedSource, resolvedDestination); // Synchronous copy
-    console.log(`File copied from ${resolvedSource} to ${resolvedDestination}`);
+    fs.copyFileSync(path.resolve(source), path.resolve(destination)); // Synchronous copy
     return {
       success: true
     };
   } catch (error) {
-    console.error("Error copying file:", error);
     return {
       success: false,
       error: error.message
@@ -1097,15 +1090,12 @@ ipcMain.handle("fs:copyFile", async (_, {
 // IPC handler for reading directory contents
 ipcMain.handle("fs:readDirectory", async (_, dir) => {
   try {
-    const resolvedDir = path.resolve(dir); // Resolve directory path
-    const files = fs.readdirSync(resolvedDir).map(file => file.trim());
-    console.log(`Files in directory ${resolvedDir}:`, files);
+    const files = fs.readdirSync(path.resolve(dir)).map(file => file.trim());
     return {
       success: true,
       files
     };
   } catch (error) {
-    console.error("Error reading directory:", error);
     return {
       success: false,
       error: error.message
@@ -1114,16 +1104,14 @@ ipcMain.handle("fs:readDirectory", async (_, dir) => {
 });
 
 // IPC handler for deleting files
-ipcMain.handle("fs:deleteFile", async (_, filePath) => {
+ipcMain.handle("fs:delete", async (_, filePath) => {
+  // Match "fs:delete"
   try {
-    const resolvedPath = path.resolve(filePath);
-    fs.unlinkSync(resolvedPath); // Delete the file
-    console.log(`File deleted: ${resolvedPath}`);
+    fs.unlinkSync(path.resolve(filePath)); // Delete the file
     return {
       success: true
     };
   } catch (error) {
-    console.error("Error deleting file:", error);
     return {
       success: false,
       error: error.message
@@ -1132,20 +1120,17 @@ ipcMain.handle("fs:deleteFile", async (_, filePath) => {
 });
 
 // IPC handler for renaming files
-ipcMain.handle("fs:renameFile", async (_, {
+ipcMain.handle("fs:rename", async (_, {
   oldPath,
   newPath
 }) => {
+  // Match "fs:rename"
   try {
-    const resolvedOldPath = path.resolve(oldPath);
-    const resolvedNewPath = path.resolve(newPath);
-    fs.renameSync(resolvedOldPath, resolvedNewPath); // Rename the file
-    console.log(`File renamed from ${resolvedOldPath} to ${resolvedNewPath}`);
+    fs.renameSync(path.resolve(oldPath), path.resolve(newPath)); // Rename the file
     return {
       success: true
     };
   } catch (error) {
-    console.error("Error renaming file:", error);
     return {
       success: false,
       error: error.message

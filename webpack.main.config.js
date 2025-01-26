@@ -5,9 +5,7 @@ module.exports = {
     rules: require("./webpack.rules"),
   },
   resolve: {
-    fallback: {
-      "path": require.resolve("path-browserify"),
-    },
+    fallback: {}, // No fallbacks for native Node modules in the main process
   },
   node: {
     __dirname: false,

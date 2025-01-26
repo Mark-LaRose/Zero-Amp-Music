@@ -15,8 +15,8 @@ module.exports = {
   },
   resolve: {
     fallback: {
-      "path": require.resolve("path-browserify"),
-      "fs": false, // Prevents polyfill for fs module in renderer
+      path: require.resolve("path-browserify"), // Use browserified path
+      fs: false, // Disable polyfilling for `fs` in the renderer process
     },
   },
 };
