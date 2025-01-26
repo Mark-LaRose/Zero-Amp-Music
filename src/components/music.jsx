@@ -38,15 +38,16 @@ const Music = ({ isVisible }) => {
       });
 
       if (!canceled && filePaths) {
-        const baseDir = window.electron.baseDir || "";
-        const targetFolder = path.join(baseDir, currentPlaylist);
+        const baseDir = window.electron.baseDir || ""; // Defined in preload.js
+        const targetFolder = `${baseDir}\\${currentPlaylist}`;
 
         filePaths.forEach((filePath) => {
-          const songName = path.basename(filePath);
-          const targetPath = path.join(targetFolder, songName);
+          const songName = filePath.split(/[/\\]/).pop(); // Extract file name
+          const targetPath = `${targetFolder}\\${songName}`;
           window.electron.fileSystem.copyFile(filePath, targetPath);
+          console.log(`File copied: ${filePath} -> ${targetPath}`); // Debugging
         });
-        loadSongs();
+        loadSongs(); // Refresh song list
       }
     } catch (error) {
       console.error("Error adding music:", error);

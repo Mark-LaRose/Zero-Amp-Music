@@ -1,132 +1,103 @@
-import React, { useState, useEffect, useRef } from 'react';
-import Player from './components/player.jsx';
-import Speaker from './components/speaker.jsx';
-import ColorPicker from './components/colorpicker.jsx';
-import Visual from './components/visual.jsx';
-import Music from './components/music.jsx'; // Import the new Music component
-import './styles/player.css';
-import './styles/speaker.css';
-import './styles/visual.css';
-import './styles/music.css'; // Import the new Music CSS
+import React, { useState, useEffect } from "react";
+import path from "path-browserify";
 
-const App = () => {
-  const [color, setColorState] = useState(localStorage.getItem('color') || '#00ff00');
-  const [showPicker, setShowPicker] = useState(false);
-  const [showMusic, setShowMusic] = useState(false); // State for music window visibility
-  const [autoColor, setAutoColor] = useState(false);
-  const [intervalId, setIntervalId] = useState(null);
-  const [currentPlaylist, setCurrentPlaylist] = useState('library');
-  const [currentSong, setCurrentSong] = useState(null);
-  const audioRef = useRef(new Audio());
+const Music = ({ isVisible }) => {
+  const [currentPlaylist, setCurrentPlaylist] = useState("library");
+  const [songs, setSongs] = useState([]);
+
+  // Load songs from the current playlist folder
+  const loadSongs = async () => {
+    const baseDir = window.electron.baseDir || ""; // Defined in preload.js
+    const folderPath = `${baseDir}\\${currentPlaylist}`;
+    try {
+      const { success, files } = await window.electron.fileSystem.readDirectory(folderPath);
+      if (success) {
+        console.log(`Files in folder (${currentPlaylist}):`, files); // Debugging
+        setSongs(files);
+      } else {
+        console.error(`Error reading folder: ${folderPath}`);
+        setSongs([]);
+      }
+    } catch (error) {
+      console.error("Error loading songs:", error);
+      setSongs([]); // Fallback to empty array
+    }
+  };
 
   useEffect(() => {
-    localStorage.setItem('color', color);
-    setColor(color);
-  }, [color]);
+    loadSongs();
+  }, [currentPlaylist]);
 
-  const setColor = (newColor) => {
-    document.documentElement.style.setProperty('--theme-color', newColor);
-    document.documentElement.style.setProperty('--theme-glow', `0 0 15px ${newColor}`);
-  };
+  const handleAddMusic = async () => {
+    try {
+      const { canceled, filePaths } = await window.electron.dialog.showOpenDialog({
+        filters: [{ name: "Audio Files", extensions: ["mp3", "wav"] }],
+        properties: ["openFile", "multiSelections"],
+      });
 
-  const togglePicker = () => setShowPicker(!showPicker);
-  const toggleMusic = () => setShowMusic(!showMusic); // Toggle function for music window
+      if (!canceled && filePaths) {
+        const baseDir = window.electron.baseDir || ""; // Defined in preload.js
+        const targetFolder = `${baseDir}\\${currentPlaylist}`;
 
-  const toggleAutoColor = () => {
-    setAutoColor(!autoColor);
-    if (!autoColor) {
-      const id = setInterval(() => {
-        setColorState(`#${Math.floor(Math.random() * 16777215).toString(16)}`);
-      }, 3000);
-      setIntervalId(id);
-    } else {
-      clearInterval(intervalId);
-      setIntervalId(null);
+        filePaths.forEach((filePath) => {
+          const songName = filePath.split(/[/\\]/).pop(); // Extract file name
+          const targetPath = `${targetFolder}\\${songName}`;
+          window.electron.fileSystem.copyFile(filePath, targetPath);
+          console.log(`File copied: ${filePath} -> ${targetPath}`); // Debugging
+        });
+        loadSongs(); // Refresh song list
+      }
+    } catch (error) {
+      console.error("Error adding music:", error);
     }
   };
 
-  const handlePlay = () => {
-    if (currentSong) {
-      audioRef.current.src = currentSong.path;
-      audioRef.current.play();
-    } else {
-      alert('No song selected!');
-    }
+  const handleRightClick = (song) => {
+    console.log(`Right-clicked on: ${song}`);
+    // Additional right-click functionality can be added here
   };
 
-  const handlePause = () => {
-    audioRef.current.pause();
-  };
-
-  const handleStop = () => {
-    audioRef.current.pause();
-    audioRef.current.currentTime = 0;
-  };
-
-  const handleNext = () => {
-    console.log('Next song functionality not yet implemented.');
-  };
-
-  const handlePrevious = () => {
-    console.log('Previous song functionality not yet implemented.');
-  };
-
-  const handleShuffle = () => {
-    console.log('Shuffle functionality not yet implemented.');
-  };
-
-  const handlePlaylistSelect = (playlist) => {
-    setCurrentPlaylist(playlist);
-    console.log(`Playlist switched to: ${playlist}`);
-  };
-
-  const handleSongSelect = (song) => {
-    const baseDir = window.electron.baseDir || '';
-    const songPath = `${baseDir}\\${currentPlaylist}\\${song}`;
-    setCurrentSong({ name: song, path: songPath });
-    console.log(`Song selected: ${song}`);
-  };
+  if (!isVisible) return null;
 
   return (
-    <div className="app">
-      <button 
-        className={`random-color-button ${autoColor ? 'active' : ''}`} 
-        onClick={toggleAutoColor} 
-        style={{ background: autoColor ? color : 'conic-gradient(white, grey, silver, silver, white, grey, silver, silver, silver, silver)' }}
-      >
-        R
-      </button>
-      <Visual />
-      <Speaker color={color} />
-      <Player 
-        color={color} 
-        currentSong={currentSong?.name}
-        onPlay={handlePlay}
-        onPause={handlePause}
-        onStop={handleStop}
-        onPrevious={handlePrevious}
-        onNext={handleNext}
-        onShuffle={handleShuffle}
-        onSelectPlaylist={handlePlaylistSelect}
-      />
-      <button className="color-picker-button" onClick={togglePicker}></button>
-      <button className="music-button" onClick={toggleMusic}>M</button>
-      {showPicker && (
-        <div className="color-picker-container">
-          <ColorPicker onChange={setColorState} />
-        </div>
-      )}
-      {showMusic && (
-        <Music 
-          isVisible={showMusic} 
-          currentPlaylist={currentPlaylist} 
-          onSongSelect={handleSongSelect} 
-          onClose={toggleMusic} 
-        />
-      )}
-      <div className="handwriting-text">Zero Amp Music</div>
+    <div className="music-window">
+      <div className="top-buttons">
+        <button
+          onClick={() => setCurrentPlaylist("library")}
+          className={currentPlaylist === "library" ? "active" : ""}
+        >
+          Library
+        </button>
+        <button onClick={handleAddMusic}>Add Music</button>
+      </div>
+      <div className="playlist-buttons">
+        {["1", "2", "3", "4", "5"].map((playlist, index) => (
+          <button
+            key={index}
+            onClick={() => setCurrentPlaylist(playlist)}
+            className={currentPlaylist === playlist ? "active" : ""}
+          >
+            {playlist}
+          </button>
+        ))}
+      </div>
+      <ul className="song-list">
+        {songs.length > 0 ? (
+          songs.map((song, index) => (
+            <li
+              key={index}
+              onContextMenu={() => handleRightClick(song)}
+              className="song-item"
+            >
+              {song}
+            </li>
+          ))
+        ) : (
+          <li className="song-item">No songs found</li> // Message if no songs are found
+        )}
+      </ul>
     </div>
   );
 };
 
-export default App;
+export default Music;

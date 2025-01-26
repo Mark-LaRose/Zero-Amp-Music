@@ -2,7 +2,7 @@ const { contextBridge, ipcRenderer } = require("electron");
 const path = require("path-browserify");
 
 // Define the direct file path to the 'music' directory
-const baseDir = "D:/TheCode/WorkingProjects/ZeroAmpMusic/public/music";
+const baseDir = process.env.MUSIC_DIR || "D:/TheCode/WorkingProjects/ZeroAmpMusic/public/music";
 
 // Create an HTML5 Audio object for music playback
 const audio = new Audio();
@@ -26,26 +26,37 @@ contextBridge.exposeInMainWorld("electron", {
 
   // Dialog functionality
   dialog: {
-    showOpenDialog: (options) => ipcRenderer.invoke("dialog:openFile", options),
+    showOpenDialog: async (options) => {
+      try {
+        return await ipcRenderer.invoke("dialog:openFile", options);
+      } catch (error) {
+        console.error("Error showing dialog:", error);
+        return { canceled: true, filePaths: [] };
+      }
+    },
   },
 
   // File system operations
   fileSystem: {
-    copyFile: (source, destination) =>
-      ipcRenderer.invoke("fs:copyFile", { source, destination }),
+    copyFile: async (source, destination) => {
+      try {
+        return await ipcRenderer.invoke("fs:copyFile", { source, destination });
+      } catch (error) {
+        console.error("Error copying file:", error);
+        return { success: false, error: error.message };
+      }
+    },
     readDirectory: async (dir) => {
       try {
-        const files = await ipcRenderer.invoke("fs:readDirectory", dir);
-        return files;
+        return await ipcRenderer.invoke("fs:readDirectory", dir);
       } catch (error) {
         console.error("Error reading directory:", error);
-        return []; // Fallback to an empty array on error
+        return { success: false, files: [] };
       }
     },
     rename: async (oldPath, newPath) => {
       try {
-        const result = await ipcRenderer.invoke("fs:rename", { oldPath, newPath });
-        return result;
+        return await ipcRenderer.invoke("fs:rename", { oldPath, newPath });
       } catch (error) {
         console.error("Error renaming file:", error);
         return { success: false, error: error.message };
@@ -53,8 +64,7 @@ contextBridge.exposeInMainWorld("electron", {
     },
     delete: async (filePath) => {
       try {
-        const result = await ipcRenderer.invoke("fs:delete", filePath);
-        return result;
+        return await ipcRenderer.invoke("fs:delete", filePath);
       } catch (error) {
         console.error("Error deleting file:", error);
         return { success: false, error: error.message };

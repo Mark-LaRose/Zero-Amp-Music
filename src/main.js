@@ -51,9 +51,12 @@ app.on("window-all-closed", () => {
 // IPC handler for opening the file dialog
 ipcMain.handle("dialog:openFile", async (_, options) => {
   try {
+    console.log("Opening dialog with options:", options);
     const result = await dialog.showOpenDialog(BrowserWindow.getFocusedWindow(), options);
+    console.log("Dialog result:", result);
     return result; // Return the selected files
   } catch (error) {
+    console.error("Error opening dialog:", error);
     return { success: false, error: error.message };
   }
 });
@@ -61,9 +64,11 @@ ipcMain.handle("dialog:openFile", async (_, options) => {
 // IPC handler for copying files
 ipcMain.handle("fs:copyFile", async (_, { source, destination }) => {
   try {
-    fs.copyFileSync(path.resolve(source), path.resolve(destination)); // Synchronous copy
+    fs.copyFileSync(source, destination);
+    console.log(`File copied from ${source} to ${destination}`);
     return { success: true };
   } catch (error) {
+    console.error("Error copying file:", error);
     return { success: false, error: error.message };
   }
 });
