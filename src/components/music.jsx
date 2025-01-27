@@ -39,7 +39,7 @@ const Music = ({ isVisible }) => {
 
       if (!canceled && filePaths) {
         const baseDir = window.electron.baseDir || ""; // Defined in preload.js
-        const targetFolder = `${baseDir}\\${currentPlaylist}`;
+        const targetFolder = `${baseDir}\\library`;
 
         filePaths.forEach((filePath) => {
           const songName = filePath.split(/[/\\]/).pop(); // Extract file name
