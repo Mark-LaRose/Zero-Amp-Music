@@ -6,8 +6,9 @@ import {
   playSong,
   pauseSong,
   stopSong,
-} from "../redux/playlistSlice"; // Import Redux actions
+} from "../redux/playlistSlice";
 import "../styles/player.css";
+import path from "path-browserify";
 
 const Player = () => {
   const dispatch = useDispatch();
@@ -15,52 +16,32 @@ const Player = () => {
     (state) => state.playlist
   );
 
-  const handlePlaylistSelect = (playlist) => {
-    const newSelection = activePlaylist === playlist ? "general" : playlist;
-    dispatch(setActivePlaylist(newSelection));
-  };
+  const baseDir = window.electron.baseDir || "";
 
   const handlePlay = () => {
     if (!currentSong && playlists[activePlaylist]?.length > 0) {
-      // Play the first song in the active playlist if none is selected
       dispatch(setCurrentSong(playlists[activePlaylist][0]));
     }
-    dispatch(playSong());
+    if (currentSong) {
+      const songPath = path.join(baseDir, activePlaylist, currentSong);
+      window.electron.audio.play(songPath);
+      dispatch(playSong());
+    }
   };
 
   const handlePause = () => {
+    window.electron.audio.pause();
     dispatch(pauseSong());
   };
 
   const handleStop = () => {
+    window.electron.audio.stop();
     dispatch(stopSong());
   };
 
-  const handleNext = () => {
-    if (!currentSong || playlists[activePlaylist]?.length === 0) return;
-    const currentIndex = playlists[activePlaylist].indexOf(currentSong);
-    const nextIndex = (currentIndex + 1) % playlists[activePlaylist].length;
-    dispatch(setCurrentSong(playlists[activePlaylist][nextIndex]));
-    dispatch(playSong());
-  };
-
-  const handlePrevious = () => {
-    if (!currentSong || playlists[activePlaylist]?.length === 0) return;
-    const currentIndex = playlists[activePlaylist].indexOf(currentSong);
-    const prevIndex =
-      (currentIndex - 1 + playlists[activePlaylist].length) %
-      playlists[activePlaylist].length;
-    dispatch(setCurrentSong(playlists[activePlaylist][prevIndex]));
-    dispatch(playSong());
-  };
-
-  const handleShuffle = () => {
-    if (playlists[activePlaylist]?.length === 0) return;
-    const randomIndex = Math.floor(
-      Math.random() * playlists[activePlaylist].length
-    );
-    dispatch(setCurrentSong(playlists[activePlaylist][randomIndex]));
-    dispatch(playSong());
+  const handlePlaylistSelect = (playlist) => {
+    const newSelection = activePlaylist === playlist ? "library" : playlist;
+    dispatch(setActivePlaylist(newSelection));
   };
 
   return (
@@ -81,9 +62,9 @@ const Player = () => {
       <div className="playlist-controls">
         <button
           className={`playlist-button ${
-            activePlaylist === "general" ? "active" : ""
+            activePlaylist === "library" ? "active" : ""
           }`}
-          onClick={() => handlePlaylistSelect("general")}
+          onClick={() => handlePlaylistSelect("library")}
         >
           Library
         </button>
@@ -111,11 +92,11 @@ const Player = () => {
       <div className="player-controls">
         <button
           className="player-button shuffle-button"
-          onClick={handleShuffle}
+          onClick={() => {}}
         ></button>
         <button
           className="player-button backward-button"
-          onClick={handlePrevious}
+          onClick={() => {}}
         ></button>
         <button
           className="player-button stop-button"
@@ -133,7 +114,7 @@ const Player = () => {
         ></button>
         <button
           className="player-button forward-button"
-          onClick={handleNext}
+          onClick={() => {}}
         ></button>
       </div>
     </div>

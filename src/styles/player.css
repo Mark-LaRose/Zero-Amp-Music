@@ -149,3 +149,7 @@
     font-size: 44px;
     color: rgb(39, 39, 39); /* Use the same variable for consistency */
 }
+
+.active-red {
+    color: rgb(2, 255, 36);
+  }
