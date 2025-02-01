@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   setActivePlaylist,
@@ -9,62 +9,103 @@ import {
   playNextSong,
   playPreviousSong,
   shuffleSong,
+  updatePlaylist,
+  toggleShuffle, // Added shuffle toggle
 } from "../redux/playlistSlice";
 import "../styles/player.css";
 import path from "path-browserify";
 
 const Player = () => {
   const dispatch = useDispatch();
-  const { activePlaylist, playlists, currentSong, isPlaying } = useSelector(
+  const { activePlaylist, playlists, currentSong, isPlaying, isShuffle } = useSelector(
     (state) => state.playlist
   );
 
   const baseDir = window.electron.baseDir || "";
 
+  // Automatically play the next song when the current one ends
+  useEffect(() => {
+    window.electron.audio.onSongEnd(() => {
+      if (isShuffle) {
+        dispatch(shuffleSong());
+      } else {
+        dispatch(playNextSong());
+      }
+    });
+  }, [dispatch, isShuffle]);
+
+  // Play new song when `currentSong` updates
+  useEffect(() => {
+    if (currentSong && isPlaying) { // Only play if user has pressed play
+      const songPath = path.join(baseDir, activePlaylist, currentSong);
+      console.log(`▶️ Playing: ${songPath}`);
+      window.electron.audio.play(songPath);
+    }
+  }, [currentSong, isPlaying, dispatch, activePlaylist, baseDir]);
+
+  // Load playlist contents and update Redux
+  const handleSelectPlaylist = async (playlistName) => {
+    const folderPath = path.join(baseDir, playlistName);
+  
+    try {
+      const { success, files } = await window.electron.fileSystem.readDirectory(folderPath);
+      if (success) {
+        console.log(`📂 Loaded Playlist: ${playlistName}, Files:`, files);
+  
+        dispatch(updatePlaylist({ playlistName, songs: files }));
+        dispatch(setActivePlaylist(playlistName));
+        dispatch(setCurrentSong(files.length > 0 ? files[0] : null)); // Just set, don't auto-play
+        window.electron.setPlaylist(files);
+      } else {
+        console.warn(`⚠️ Failed to load playlist: ${playlistName}`);
+        dispatch(setActivePlaylist(playlistName));
+        dispatch(setCurrentSong(null));
+      }
+    } catch (error) {
+      console.error("❌ Error reading directory:", error);
+      dispatch(setActivePlaylist(playlistName));
+      dispatch(setCurrentSong(null));
+    }
+  };
+
   const handlePlay = () => {
-  if (!currentSong && playlists[activePlaylist]?.length > 0) {
-    const firstSong = playlists[activePlaylist][0];
-    dispatch(setCurrentSong(firstSong)); // Auto-select first song
-    window.electron.audio.play(path.join(baseDir, activePlaylist, firstSong));
-    dispatch(playSong());
-  } else if (currentSong) {
-    window.electron.audio.play(path.join(baseDir, activePlaylist, currentSong));
-    dispatch(playSong());
-  }
-};
+    if (!currentSong && playlists[activePlaylist]?.length > 0) {
+      const firstSong = playlists[activePlaylist][0];
+      dispatch(setCurrentSong(firstSong));
+    } else if (currentSong) {
+      const songPath = path.join(baseDir, activePlaylist, currentSong);
+      console.log(`▶️ Playing: ${songPath}`);
+      window.electron.audio.play(songPath);
+      dispatch(playSong());
+    }
+  };
 
   const handlePause = () => {
-    window.electron.audio.pause(); // 🔹 Send pause command to Electron
+    window.electron.audio.pause();
     dispatch(pauseSong());
   };
 
   const handleStop = () => {
     window.electron.audio.stop();
-    dispatch(pauseSong()); // Pause instead of deselecting song
+    dispatch(stopSong());
   };
 
   const handleNext = () => {
-    dispatch(playNextSong()); // 🔹 Update Redux state
-    if (currentSong) {
-      const songPath = path.join(baseDir, activePlaylist, currentSong);
-      window.electron.audio.play(songPath); // 🔹 Play next song
+    if (isShuffle) {
+      dispatch(shuffleSong());
+    } else {
+      dispatch(playNextSong());
+      window.electron.audio.playNext(); // Electron handles next song
     }
   };
 
   const handlePrevious = () => {
-    dispatch(playPreviousSong()); // 🔹 Update Redux state
-    if (currentSong) {
-      const songPath = path.join(baseDir, activePlaylist, currentSong);
-      window.electron.audio.play(songPath); // 🔹 Play previous song
-    }
+    dispatch(playPreviousSong());
+    window.electron.audio.playPrevious(); // Electron handles previous song
   };
 
   const handleShuffle = () => {
-    dispatch(shuffleSong()); // 🔹 Update Redux state
-    if (currentSong) {
-      const songPath = path.join(baseDir, activePlaylist, currentSong);
-      window.electron.audio.play(songPath); // 🔹 Play shuffled song
-    }
+    dispatch(toggleShuffle());
   };
 
   const handleVolumeChange = (event) => {
@@ -92,14 +133,30 @@ const Player = () => {
       <div className="player-display">
         <p className="player-info">
           <span className="scrolling-text">
-          {currentSong ? `Currently Playing: ${currentSong.replace(/\.[^/.]+$/, "")}` : "Currently Playing: [No Song Selected]"}
+            {currentSong
+              ? `Currently Playing: ${currentSong.replace(/\.[^/.]+$/, "")}`
+              : "Currently Playing: [No Song Selected]"}
           </span>
         </p>
       </div>
 
+      {/* Playlist Selection */}
+      <div className="playlist-selection">
+        {[1, 2, 3, 4, 5].map((num) => (
+          <button key={num} onClick={() => handleSelectPlaylist(`${num}`)}>
+            Playlist {num}
+          </button>
+        ))}
+      </div>
+
       {/* Player Controls */}
       <div className="player-controls">
-        <button className="player-button shuffle-button" onClick={handleShuffle}></button>
+        <button 
+          className={`player-button shuffle-button ${isShuffle ? "shuffle-active" : ""}`}  
+          onClick={handleShuffle}
+        >
+          ?
+        </button>
         <button className="player-button backward-button" onClick={handlePrevious}></button>
         <button className="player-button stop-button" onClick={handleStop}></button>
         <button className="player-button pause-button" onClick={handlePause} disabled={!isPlaying}></button>

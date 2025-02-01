@@ -1,22 +1,20 @@
 const { contextBridge, ipcRenderer } = require("electron");
 const path = require("path-browserify");
 
-// Define the direct file path to the 'music' directory
 const baseDir = process.env.MUSIC_DIR || "D:/TheCode/WorkingProjects/ZeroAmpMusic/public/music";
-
-// Create an HTML5 Audio object for music playback
 const audio = new Audio();
 let playlist = [];
 let currentIndex = 0;
+let isAutoPlayAllowed = false; // 🔹 Prevents autoplay when selecting a new playlist
 
-// Helper function to format file paths correctly
+// Improved path formatting to handle spaces and special characters
 const formatFilePath = (filePath) => {
   try {
-    const formattedPath = `file://${filePath.replace(/\\/g, "/")}`; // Fix path formatting
-    console.log(`Formatted file path: ${formattedPath}`);
+    const formattedPath = `file://${encodeURI(filePath.replace(/\\/g, "/"))}`;
+    console.log(`🛠️ Formatted file path: ${formattedPath}`);
     return formattedPath;
   } catch (error) {
-    console.error("Error formatting file path:", error);
+    console.error("❌ Error formatting file path:", error);
     return filePath;
   }
 };
@@ -25,15 +23,26 @@ const formatFilePath = (filePath) => {
 const playSong = (filePath) => {
   try {
     const formattedPath = formatFilePath(filePath);
-    console.log(`Attempting to play: ${formattedPath}`);
-    audio.src = formattedPath;
-    audio.play().then(() => {
-      console.log(`Started playing: ${formattedPath}`);
-    }).catch((error) => {
-      console.error("Error starting playback:", error);
-    });
+    console.log(`▶️ Attempting to play: ${formattedPath}`);
+    
+    if (audio.src !== formattedPath) {
+      audio.src = formattedPath; // Load new song only if different
+      audio.currentTime = 0; // Reset time for new song
+    }
+
+    if (isAutoPlayAllowed) { // 🔹 Only play if autoplay is allowed
+      audio.play()
+        .then(() => console.log(`🎶 Now playing: ${formattedPath}`))
+        .catch((error) => console.error("❌ Error starting playback:", error));
+    }
+
+    // Auto-play next song when current one ends
+    audio.onended = () => {
+      console.log("🎵 Song ended, triggering next...");
+      ipcRenderer.send("audio:ended");
+    };
   } catch (error) {
-    console.error("Error playing audio:", error);
+    console.error("❌ Error playing audio:", error);
   }
 };
 
@@ -41,53 +50,28 @@ const playSong = (filePath) => {
 contextBridge.exposeInMainWorld("electron", {
   baseDir,
 
-  // Dialog functionality
-  dialog: {
-    showOpenDialog: async (options) => {
-      try {
-        return await ipcRenderer.invoke("dialog:openFile", options);
-      } catch (error) {
-        console.error("Error showing dialog:", error);
-        return { canceled: true, filePaths: [] };
-      }
-    },
+  // Update playlist from renderer
+  setPlaylist: (newPlaylist) => {
+    playlist = newPlaylist;
+    currentIndex = 0;
+    isAutoPlayAllowed = false; // 🔹 Prevents autoplay when changing playlist
+    console.log("📂 Playlist updated:", playlist);
   },
+
+  // Get the current playlist
+  getPlaylist: () => playlist,
 
   // File system operations
   fileSystem: {
-    copyFile: async (source, destination) => {
-      try {
-        return await ipcRenderer.invoke("fs:copyFile", { source, destination });
-      } catch (error) {
-        console.error("Error copying file:", error);
-        return { success: false, error: error.message };
-      }
-    },
     readDirectory: async (dir) => {
       try {
-        console.log(`Reading directory: ${dir}`);
+        console.log(`📁 Reading directory: ${dir}`);
         const result = await ipcRenderer.invoke("fs:readDirectory", dir);
-        console.log(`Files in directory:`, result.files);
+        console.log(`📃 Files in directory:`, result.files);
         return result;
       } catch (error) {
-        console.error("Error reading directory:", error);
+        console.error("❌ Error reading directory:", error);
         return { success: false, files: [] };
-      }
-    },
-    rename: async (oldPath, newPath) => {
-      try {
-        return await ipcRenderer.invoke("fs:rename", { oldPath, newPath });
-      } catch (error) {
-        console.error("Error renaming file:", error);
-        return { success: false, error: error.message };
-      }
-    },
-    delete: async (filePath) => {
-      try {
-        return await ipcRenderer.invoke("fs:delete", filePath);
-      } catch (error) {
-        console.error("Error deleting file:", error);
-        return { success: false, error: error.message };
       }
     },
   },
@@ -96,51 +80,88 @@ contextBridge.exposeInMainWorld("electron", {
   audio: {
     play: (filePath) => {
       try {
+        isAutoPlayAllowed = true; // 🔹 Allow playback only when Play is manually pressed
         if (filePath) {
           playSong(filePath);
-        } else if (audio.src) {  // 🔹 If a song is already loaded, resume playback
+        } else if (audio.src) {
           audio.play();
-          console.log("Resumed playback of:", audio.src);
+          console.log(`▶️ Resumed playback at ${audio.currentTime} sec: ${audio.src}`);
         }
       } catch (error) {
-        console.error("Error playing audio:", error);
+        console.error("❌ Error playing audio:", error);
       }
     },
+
     pause: () => {
       try {
         if (!audio.paused) {
           audio.pause();
-          console.log("Audio paused at:", audio.currentTime);
+          console.log(`⏸️ Audio paused at: ${audio.currentTime}`);
         }
       } catch (error) {
-        console.error("Error pausing audio:", error);
+        console.error("❌ Error pausing audio:", error);
       }
     },
-    resume: () => {
-      try {
-        audio.play(); // Resume from paused position
-        console.log("Audio resumed from:", audio.currentTime);
-      } catch (error) {
-        console.error("Error resuming audio:", error);
-      }
-    },
+
     stop: () => {
       try {
         audio.pause();
-        audio.currentTime = 0; // Reset to beginning
-        console.log("Audio stopped");
+        audio.currentTime = 0;
+        isAutoPlayAllowed = false; // 🔹 Prevent autoplay after stopping
+        console.log("⏹️ Audio stopped");
       } catch (error) {
-        console.error("Error stopping audio:", error);
+        console.error("❌ Error stopping audio:", error);
       }
     },
+
     setVolume: (volume) => {
       try {
         audio.volume = volume / 100;
-        console.log(`Volume set to: ${volume}`);
+        console.log(`🔊 Volume set to: ${volume}`);
       } catch (error) {
-        console.error("Error setting volume:", error);
+        console.error("❌ Error setting volume:", error);
       }
     },
+
     isPaused: () => audio.paused,
+
+    // Notify React when a song finishes playing
+    onSongEnd: (callback) => {
+      ipcRenderer.on("audio:ended", () => {
+        callback();
+      });
+    },
+
+    // Play next song in playlist
+    playNext: () => {
+      if (playlist.length > 0) {
+        currentIndex = (currentIndex + 1) % playlist.length;
+        console.log(`⏭️ Playing Next Song: ${playlist[currentIndex]}`);
+        isAutoPlayAllowed = true; // 🔹 Ensure next song continues playing
+        playSong(path.join(baseDir, playlist[currentIndex]));
+      } else {
+        console.warn("⚠️ No songs available in playlist.");
+      }
+    },
+
+    // Play previous song in playlist
+    playPrevious: () => {
+      if (playlist.length > 0) {
+        currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+        console.log(`⏮️ Playing Previous Song: ${playlist[currentIndex]}`);
+        isAutoPlayAllowed = true; // 🔹 Ensure previous song continues playing
+        playSong(path.join(baseDir, playlist[currentIndex]));
+      } else {
+        console.warn("⚠️ No songs available in playlist.");
+      }
+    },
   },
+
+  //Handle stopping playback when silver buttons "1", "2", or deselecting "3"
+  stopOnSilverButton: () => {
+    console.log("⏹️ Stopping playback due to silver button selection/deselection.");
+    audio.pause();
+    audio.currentTime = 0;
+    isAutoPlayAllowed = false;
+  }
 });
