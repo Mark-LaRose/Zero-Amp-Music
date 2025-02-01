@@ -6,6 +6,8 @@ const baseDir = process.env.MUSIC_DIR || "D:/TheCode/WorkingProjects/ZeroAmpMusi
 
 // Create an HTML5 Audio object for music playback
 const audio = new Audio();
+let playlist = [];
+let currentIndex = 0;
 
 // Helper function to format file paths correctly
 const formatFilePath = (filePath) => {
@@ -19,9 +21,24 @@ const formatFilePath = (filePath) => {
   }
 };
 
+// Function to play a specific song
+const playSong = (filePath) => {
+  try {
+    const formattedPath = formatFilePath(filePath);
+    console.log(`Attempting to play: ${formattedPath}`);
+    audio.src = formattedPath;
+    audio.play().then(() => {
+      console.log(`Started playing: ${formattedPath}`);
+    }).catch((error) => {
+      console.error("Error starting playback:", error);
+    });
+  } catch (error) {
+    console.error("Error playing audio:", error);
+  }
+};
+
 // Expose safe APIs to the renderer process
 contextBridge.exposeInMainWorld("electron", {
-  // Expose the base directory path
   baseDir,
 
   // Dialog functionality
@@ -48,7 +65,10 @@ contextBridge.exposeInMainWorld("electron", {
     },
     readDirectory: async (dir) => {
       try {
-        return await ipcRenderer.invoke("fs:readDirectory", dir);
+        console.log(`Reading directory: ${dir}`);
+        const result = await ipcRenderer.invoke("fs:readDirectory", dir);
+        console.log(`Files in directory:`, result.files);
+        return result;
       } catch (error) {
         console.error("Error reading directory:", error);
         return { success: false, files: [] };
@@ -76,33 +96,38 @@ contextBridge.exposeInMainWorld("electron", {
   audio: {
     play: (filePath) => {
       try {
-        const formattedPath = formatFilePath(filePath); // Format the path
-        console.log(`Attempting to play: ${formattedPath}`);
-        audio.src = formattedPath;
-        audio
-          .play()
-          .then(() => {
-            console.log(`Started playing: ${formattedPath}`);
-          })
-          .catch((error) => {
-            console.error("Error starting playback:", error);
-          });
+        if (filePath) {
+          playSong(filePath);
+        } else if (audio.src) {  // 🔹 If a song is already loaded, resume playback
+          audio.play();
+          console.log("Resumed playback of:", audio.src);
+        }
       } catch (error) {
         console.error("Error playing audio:", error);
       }
     },
     pause: () => {
       try {
-        audio.pause();
-        console.log("Audio paused");
+        if (!audio.paused) {
+          audio.pause();
+          console.log("Audio paused at:", audio.currentTime);
+        }
       } catch (error) {
         console.error("Error pausing audio:", error);
+      }
+    },
+    resume: () => {
+      try {
+        audio.play(); // Resume from paused position
+        console.log("Audio resumed from:", audio.currentTime);
+      } catch (error) {
+        console.error("Error resuming audio:", error);
       }
     },
     stop: () => {
       try {
         audio.pause();
-        audio.currentTime = 0;
+        audio.currentTime = 0; // Reset to beginning
         console.log("Audio stopped");
       } catch (error) {
         console.error("Error stopping audio:", error);
@@ -116,31 +141,6 @@ contextBridge.exposeInMainWorld("electron", {
         console.error("Error setting volume:", error);
       }
     },
-    isPlaying: () => !audio.paused,
-  },
-
-  // Enhanced error handling for audio events
-  audioEvents: {
-    attachErrorLogger: () => {
-      audio.onerror = () => {
-        console.error("Audio playback error", audio.error);
-        switch (audio.error.code) {
-          case audio.error.MEDIA_ERR_ABORTED:
-            console.error("Playback was aborted.");
-            break;
-          case audio.error.MEDIA_ERR_NETWORK:
-            console.error("A network error occurred.");
-            break;
-          case audio.error.MEDIA_ERR_DECODE:
-            console.error("Audio decoding failed.");
-            break;
-          case audio.error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-            console.error("Audio source not supported.");
-            break;
-          default:
-            console.error("An unknown error occurred.");
-        }
-      };
-    },
+    isPaused: () => audio.paused,
   },
 });

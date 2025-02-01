@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import path from "path-browserify";
+import { useDispatch } from "react-redux";
+import { setCurrentSong } from "../redux/playlistSlice";
 
 const Music = ({ isVisible }) => {
+  const dispatch = useDispatch();
   const [currentPlaylist, setCurrentPlaylist] = useState("library");
   const [songs, setSongs] = useState([]);
   const [selectedSong, setSelectedSong] = useState(null);
@@ -55,15 +58,16 @@ const Music = ({ isVisible }) => {
   };
 
   const handleDoubleClick = (song) => {
-    console.log(`Playing: ${song}`);
-    const baseDir = window.electron.baseDir || "";
-    const songPath = path.join(baseDir, currentPlaylist, song);
+    const baseDir = window.electron.baseDir || ""; // Ensure baseDir is defined
+    const songPath = path.join(baseDir, currentPlaylist, song); // Use currentPlaylist
 
     try {
-      window.electron.audio.play(songPath); // Directly pass the clean path
-      console.log(`Started playing: ${songPath}`);
+        window.electron.audio.play(songPath);
+        dispatch(setCurrentSong(song)); // Update Redux with the current song
+        setSelectedSong(song); // Local state tracking
+        console.log(`Started playing: ${songPath}`);
     } catch (error) {
-      console.error("Error starting playback:", error);
+        console.error("Error starting playback:", error);
     }
   };
 
@@ -134,7 +138,8 @@ const Music = ({ isVisible }) => {
   };
 
   const handleSelectSong = (song) => {
-    setSelectedSong(song);
+    dispatch(setCurrentSong(song)); // Update Redux with the selected song
+    setSelectedSong(song); // Local state tracking
   };
 
   if (!isVisible) return null;

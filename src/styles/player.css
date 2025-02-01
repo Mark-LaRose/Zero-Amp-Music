@@ -84,11 +84,11 @@
   
 .player-display {
     position: absolute;
-    top: 360px;
+    top: 370px;
     left: 50%;
     transform: translateX(-50%);
     width: 38%;
-    height: 30px;
+    height: 26px;
     border: 2px solid rgb(39, 39, 39);
     color: var(--color);
     text-align: center;
@@ -98,11 +98,32 @@
 }
   
 .player-info {
-    margin-top: -8px;
+    display: flex;
+    align-items: center;
+    width: 90%;
+    overflow: hidden;
+    white-space: nowrap;
     color: green;
     font-size: 16px;
-    line-height: 1.5;
     padding: 10px;
+    margin-top: -6px;
+    position: relative; /* Ensures proper alignment */
+}
+
+.scrolling-text {
+    display: inline-block;
+    white-space: nowrap;
+    animation: marquee 18s linear infinite;
+}
+
+/* Scrolling Animation */
+@keyframes marquee {
+    from {
+        transform: translateX(100%); /* Start off-screen on the right */
+    }
+    to {
+        transform: translateX(-100%); /* Move fully left */
+    }
 }
   
 .volume-slider-container {
@@ -151,5 +172,5 @@
 }
 
 .active-red {
-    color: rgb(2, 255, 36);
-  }
+    color: rgb(0, 128, 0);
+}
