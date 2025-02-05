@@ -10,10 +10,11 @@ import {
   playPreviousSong,
   shuffleSong,
   updatePlaylist,
-  toggleShuffle, // Added shuffle toggle
+  toggleShuffle, // Shuffle toggle
 } from "../redux/playlistSlice";
 import "../styles/player.css";
 import path from "path-browserify";
+import { FaRandom } from "react-icons/fa";
 
 const Player = () => {
   const dispatch = useDispatch();
@@ -26,6 +27,7 @@ const Player = () => {
   // Automatically play the next song when the current one ends
   useEffect(() => {
     window.electron.audio.onSongEnd(() => {
+      console.log("🎵 Song ended, calling playNextSong()");
       if (isShuffle) {
         dispatch(shuffleSong());
       } else {
@@ -54,7 +56,7 @@ const Player = () => {
   
         dispatch(updatePlaylist({ playlistName, songs: files }));
         dispatch(setActivePlaylist(playlistName));
-        dispatch(setCurrentSong(files.length > 0 ? files[0] : null)); // Just set, don't auto-play
+        dispatch(setCurrentSong(files.length > 0 ? files[0] : null)); // Set, but don't auto-play
         window.electron.setPlaylist(files);
       } else {
         console.warn(`⚠️ Failed to load playlist: ${playlistName}`);
@@ -91,17 +93,18 @@ const Player = () => {
   };
 
   const handleNext = () => {
+    console.log("⏭️ Next song triggered");
     if (isShuffle) {
       dispatch(shuffleSong());
     } else {
       dispatch(playNextSong());
-      window.electron.audio.playNext(); // Electron handles next song
     }
   };
 
   const handlePrevious = () => {
+    console.log("⏮️ Previous song triggered");
     dispatch(playPreviousSong());
-    window.electron.audio.playPrevious(); // Electron handles previous song
+    window.electron.audio.playPrevious();
   };
 
   const handleShuffle = () => {
@@ -155,7 +158,7 @@ const Player = () => {
           className={`player-button shuffle-button ${isShuffle ? "shuffle-active" : ""}`}  
           onClick={handleShuffle}
         >
-          ?
+          <FaRandom className="shuffle-icon" />
         </button>
         <button className="player-button backward-button" onClick={handlePrevious}></button>
         <button className="player-button stop-button" onClick={handleStop}></button>

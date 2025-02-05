@@ -5,13 +5,13 @@ const baseDir = process.env.MUSIC_DIR || "D:/TheCode/WorkingProjects/ZeroAmpMusi
 const audio = new Audio();
 let playlist = [];
 let currentIndex = 0;
-let isAutoPlayAllowed = false; // 🔹 Prevents autoplay when selecting a new playlist
+let isAutoPlayAllowed = false; // Allow autoplay by default
 
-// Improved path formatting to handle spaces and special characters
+// Format file paths to handle spaces and special characters properly
 const formatFilePath = (filePath) => {
   try {
-    const formattedPath = `file://${encodeURI(filePath.replace(/\\/g, "/"))}`;
-    console.log(`🛠️ Formatted file path: ${formattedPath}`);
+    const formattedPath = `file://${filePath.replace(/\\/g, "/")}`;
+    console.log(`🛠️ Corrected file path: ${formattedPath}`);
     return formattedPath;
   } catch (error) {
     console.error("❌ Error formatting file path:", error);
@@ -24,13 +24,12 @@ const playSong = (filePath) => {
   try {
     const formattedPath = formatFilePath(filePath);
     console.log(`▶️ Attempting to play: ${formattedPath}`);
-    
+
     if (audio.src !== formattedPath) {
       audio.src = formattedPath; // Load new song only if different
-      audio.currentTime = 0; // Reset time for new song
     }
 
-    if (isAutoPlayAllowed) { // 🔹 Only play if autoplay is allowed
+    if (isAutoPlayAllowed) {
       audio.play()
         .then(() => console.log(`🎶 Now playing: ${formattedPath}`))
         .catch((error) => console.error("❌ Error starting playback:", error));
@@ -50,11 +49,15 @@ const playSong = (filePath) => {
 contextBridge.exposeInMainWorld("electron", {
   baseDir,
 
+  dialog: {
+    showOpenDialog: (options) => ipcRenderer.invoke("dialog:openFile", options),
+  },
+
   // Update playlist from renderer
   setPlaylist: (newPlaylist) => {
     playlist = newPlaylist;
     currentIndex = 0;
-    isAutoPlayAllowed = false; // 🔹 Prevents autoplay when changing playlist
+    isAutoPlayAllowed = true;
     console.log("📂 Playlist updated:", playlist);
   },
 
@@ -74,13 +77,37 @@ contextBridge.exposeInMainWorld("electron", {
         return { success: false, files: [] };
       }
     },
+    copyFile: async (source, destination) => {
+      try {
+        return await ipcRenderer.invoke("fs:copyFile", { source, destination });
+      } catch (error) {
+        console.error("❌ Error copying file:", error);
+        return { success: false, error: error.message };
+      }
+    },
+    rename: async (oldPath, newPath) => {
+      try {
+        return await ipcRenderer.invoke("fs:rename", { oldPath, newPath });
+      } catch (error) {
+        console.error("❌ Error renaming file:", error);
+        return { success: false, error: error.message };
+      }
+    },
+    delete: async (filePath) => {
+      try {
+        return await ipcRenderer.invoke("fs:delete", filePath);
+      } catch (error) {
+        console.error("❌ Error deleting file:", error);
+        return { success: false, error: error.message };
+      }
+    },
   },
 
   // Audio playback functionality
   audio: {
     play: (filePath) => {
       try {
-        isAutoPlayAllowed = true; // 🔹 Allow playback only when Play is manually pressed
+        isAutoPlayAllowed = true;
         if (filePath) {
           playSong(filePath);
         } else if (audio.src) {
@@ -107,7 +134,7 @@ contextBridge.exposeInMainWorld("electron", {
       try {
         audio.pause();
         audio.currentTime = 0;
-        isAutoPlayAllowed = false; // 🔹 Prevent autoplay after stopping
+        isAutoPlayAllowed = false;
         console.log("⏹️ Audio stopped");
       } catch (error) {
         console.error("❌ Error stopping audio:", error);
@@ -127,9 +154,8 @@ contextBridge.exposeInMainWorld("electron", {
 
     // Notify React when a song finishes playing
     onSongEnd: (callback) => {
-      ipcRenderer.on("audio:ended", () => {
-        callback();
-      });
+      console.log("🎵 onSongEnd event triggered"); // Add this line
+      ipcRenderer.on("play-next-song", callback);
     },
 
     // Play next song in playlist
@@ -137,7 +163,7 @@ contextBridge.exposeInMainWorld("electron", {
       if (playlist.length > 0) {
         currentIndex = (currentIndex + 1) % playlist.length;
         console.log(`⏭️ Playing Next Song: ${playlist[currentIndex]}`);
-        isAutoPlayAllowed = true; // 🔹 Ensure next song continues playing
+        isAutoPlayAllowed = true;
         playSong(path.join(baseDir, playlist[currentIndex]));
       } else {
         console.warn("⚠️ No songs available in playlist.");
@@ -149,7 +175,7 @@ contextBridge.exposeInMainWorld("electron", {
       if (playlist.length > 0) {
         currentIndex = (currentIndex - 1 + playlist.length) % playlist.length;
         console.log(`⏮️ Playing Previous Song: ${playlist[currentIndex]}`);
-        isAutoPlayAllowed = true; // 🔹 Ensure previous song continues playing
+        isAutoPlayAllowed = true;
         playSong(path.join(baseDir, playlist[currentIndex]));
       } else {
         console.warn("⚠️ No songs available in playlist.");
@@ -157,7 +183,7 @@ contextBridge.exposeInMainWorld("electron", {
     },
   },
 
-  //Handle stopping playback when silver buttons "1", "2", or deselecting "3"
+  // Handle stopping playback when silver buttons "1", "2", or deselecting "3"
   stopOnSilverButton: () => {
     console.log("⏹️ Stopping playback due to silver button selection/deselection.");
     audio.pause();

@@ -23,6 +23,17 @@ module.exports = [
       },
     },
   },
+  {
+    test: /\.svg$/,
+    use: [
+      {
+        loader: "file-loader",
+        options: {
+          name: "[path][name].[ext]", // Keeps the file name and path
+        },
+      },
+    ],
+  },
 ];
 
 module.exports.resolve = {

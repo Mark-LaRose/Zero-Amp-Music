@@ -5,7 +5,7 @@ import {
   setActivePlaylist,
   setCurrentSong,
   updatePlaylist,
-  stopSong, // ✅ Import stopSong action
+  stopSong,
 } from "./redux/playlistSlice";
 import Player from "./components/player.jsx";
 import Speaker from "./components/speaker.jsx";
@@ -17,6 +17,9 @@ import "./styles/speaker.css";
 import "./styles/visual.css";
 import "./styles/music.css";
 import path from "path-browserify";
+import { BsMusicNoteList } from "react-icons/bs";
+import { FaMusic, FaYoutube } from "react-icons/fa";
+import { IoRadioSharp } from "react-icons/io5";
 
 const App = () => {
   const [color, setColorState] = useState(localStorage.getItem("color") || "#00ff00");
@@ -44,7 +47,8 @@ const App = () => {
     setAutoColor(!autoColor);
     if (!autoColor) {
       const id = setInterval(() => {
-        setColorState(`#${Math.floor(Math.random() * 16777215).toString(16)}`);
+        const randomColor = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+        setColorState(randomColor);
       }, 3000);
       setIntervalId(id);
     } else {
@@ -57,6 +61,7 @@ const App = () => {
     <Provider store={store}>
       <AppContent
         color={color}
+        setColorState={setColorState}
         showPicker={showPicker}
         togglePicker={togglePicker}
         showMusic={showMusic}
@@ -74,6 +79,7 @@ const App = () => {
 
 const AppContent = ({
   color,
+  setColorState,
   showPicker,
   togglePicker,
   showMusic,
@@ -96,11 +102,11 @@ const AppContent = ({
       if (success) {
         console.log(`📂 Loaded Playlist: ${playlistName}, Files:`, files);
 
-        dispatch(updatePlaylist({ playlistName, songs: files })); // ✅ Update Redux store
+        dispatch(updatePlaylist({ playlistName, songs: files }));
         dispatch(setActivePlaylist(playlistName));
         dispatch(setCurrentSong(files.length > 0 ? files[0] : null));
 
-        window.electron.setPlaylist(files); // ✅ Sync with Electron
+        window.electron.setPlaylist(files);
       } else {
         console.warn(`⚠️ No files found in playlist: ${playlistName}`);
         dispatch(setActivePlaylist(playlistName));
@@ -119,7 +125,7 @@ const AppContent = ({
         const newState = prev === buttonId ? null : buttonId;
 
         if (newState === null) {
-          handleSelectPlaylist("library"); // ✅ Revert to default playlist
+          handleSelectPlaylist("library");
         } else {
           handleSelectPlaylist(playlistName);
         }
@@ -139,9 +145,8 @@ const AppContent = ({
 
       if (buttonId === "extra-3") {
         if (newState === null) {
-          // ✅ If "3" is deselected, stop music (Electron & Redux)
           dispatch(stopSong());
-          window.electron.audio.stop(); // ✅ Physically stop the music
+          window.electron.audio.stop();
           setActivePlaylistButton(null);
           dispatch(setActivePlaylist({ playlistName: null, songs: [] }));
           dispatch(setCurrentSong(null));
@@ -151,9 +156,8 @@ const AppContent = ({
       }
 
       if (buttonId === "extra-1" || buttonId === "extra-2") {
-        // ✅ If "1" or "2" is selected, stop music (Electron & Redux)
         dispatch(stopSong());
-        window.electron.audio.stop(); // ✅ Physically stop the music
+        window.electron.audio.stop();
       }
 
       return newState;
@@ -162,6 +166,13 @@ const AppContent = ({
     if (buttonId === "extra-1") {
       setActivePlaylistButton(null);
     }
+  };
+
+  // Icon mapping for buttons
+  const iconMap = {
+    "extra-3": FaMusic,
+    "extra-2": IoRadioSharp,
+    "extra-1": FaYoutube,
   };
 
   return (
@@ -175,27 +186,29 @@ const AppContent = ({
             : "conic-gradient(white, grey, silver, silver, white, grey, silver, silver, silver, silver)",
         }}
       >
-        R
+        ?
       </button>
       <Visual />
       <Speaker color={color} />
       <Player color={color} />
       <button className="color-picker-button" onClick={togglePicker}></button>
       <button className="music-button" onClick={toggleMusic}>
-        M
+        <BsMusicNoteList />
       </button>
 
-      {["extra-3", "extra-2", "extra-1"].map((num) => (
-        <button
-          key={num}
-          className={`extra-button ${activeSilverButton === num ? "active-silver" : ""}`}
-          onClick={() => handleSilverToggle(num)}
-        >
-          <span className={activeSilverButton === num ? "active-red" : ""}>
-            {num.replace("extra-", "")}
-          </span>
-        </button>
-      ))}
+      {["extra-3", "extra-2", "extra-1"].map((num) => {
+        const IconComponent = iconMap[num];
+
+        return (
+          <button
+            key={num}
+            className={`extra-button ${num}`} // Add unique class
+            onClick={() => handleSilverToggle(num)}
+          >
+            <IconComponent className={activeSilverButton === num ? "active-red" : ""} />
+          </button>
+        );
+      })}
 
       {showPicker && (
         <div className="color-picker-container">
@@ -210,7 +223,7 @@ const AppContent = ({
           onClick={() => handlePlaylistToggle(`h${num}`, `${num}`)}
           disabled={activeSilverButton === "extra-1"}
         >
-          <span className={activePlaylistButton === `h${num}` ? "active-red" : ""}>{num}</span>
+          <span className={activePlaylistButton === `h${num}` ? "active-green" : ""}>{num}</span>
         </button>
       ))}
 

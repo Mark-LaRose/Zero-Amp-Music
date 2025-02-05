@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import path from "path-browserify";
 
 const initialState = {
   playlists: {
@@ -34,7 +35,7 @@ const playlistSlice = createSlice({
 
       if (playlist.length > 0) {
         state.currentSong = playlist[0]; // Set first song, but don't autoplay
-        state.isPlaying = false; // ❌ Ensure it doesn't start playing automatically
+        state.isPlaying = false; // Ensure it doesn't start playing automatically
       } else {
         state.currentSong = null;
       }
@@ -82,7 +83,7 @@ const playlistSlice = createSlice({
       console.log("⏹️ Stopped playback.");
     },
 
-    // Play next song (shuffle-aware)
+    // ✅ **Play next song (shuffle-aware) with correct path resolution**
     playNextSong: (state) => {
       const playlist = state.playlists[state.activePlaylist] || [];
       if (playlist.length > 0) {
@@ -95,24 +96,41 @@ const playlistSlice = createSlice({
           const currentIndex = playlist.indexOf(state.currentSong);
           nextIndex = (currentIndex + 1) % playlist.length;
         }
-        state.currentSong = playlist[nextIndex];
+
+        // 🔹 Ensure we format the full path correctly
+        const baseDir = window.electron.baseDir || "";
+        const correctPath = path.join(baseDir, state.activePlaylist === "library" ? "library" : state.activePlaylist, playlist[nextIndex]);
+
+        console.log(`⏭️ Next Song Path: ${correctPath}`); // Debugging output
+
+        state.currentSong = playlist[nextIndex]; // Store just the filename
         state.isPlaying = true;
-        console.log(`⏭️ Next Song: ${state.currentSong}`);
+
+        // Notify Electron to play next song
+        window.electron.audio.play(correctPath);
       } else {
         console.warn("⚠️ No songs in the playlist.");
       }
     },
 
-    // Play previous song and loop if needed
+    // ✅ **Play previous song and loop if needed with correct path**
     playPreviousSong: (state) => {
       const playlist = state.playlists[state.activePlaylist] || [];
       if (playlist.length > 0) {
         const currentIndex = playlist.indexOf(state.currentSong);
         if (currentIndex !== -1) {
           const prevIndex = (currentIndex - 1 + playlist.length) % playlist.length;
+          
+          const baseDir = window.electron.baseDir || "";
+          const correctPath = path.join(baseDir, state.activePlaylist, playlist[prevIndex]);
+
           state.currentSong = playlist[prevIndex];
           state.isPlaying = true;
-          console.log(`⏮️ Previous Song: ${state.currentSong}`);
+
+          console.log(`⏮️ Previous Song Path: ${correctPath}`);
+
+          // Notify Electron to play previous song
+          window.electron.audio.play(correctPath);
         } else {
           console.warn("⚠️ Current song not found in playlist.");
         }
