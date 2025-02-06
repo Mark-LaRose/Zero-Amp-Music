@@ -1,4 +1,4 @@
-# 🎵 Zero Amp Music
+# 🎵 Zero Amp Music 🎵
 
 ## 🎧 About the Project
 Zero Amp Music is a sleek, **Electron-based music player** designed for simplicity and performance. It allows users to create and manage playlists, play audio files, and visualize music effects. Built with **React, Redux, and Electron**, it provides a smooth desktop experience for music lovers.
@@ -69,8 +69,5 @@ The app should now launch as a **desktop application**!
 
 ## 📜 License
 This project is released under the MIT License. You are free to use, modify, and distribute the code, but there is no active support or contribution process.
-
-## 🤝 Contributing
-Want to contribute? Fork the repo, make changes, and submit a PR!
 
 🎶 _Enjoy your music with Zero Amp Music!_ 🎵
