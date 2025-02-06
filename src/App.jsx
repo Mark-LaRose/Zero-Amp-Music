@@ -100,20 +100,16 @@ const AppContent = ({
     try {
       const { success, files } = await window.electron.fileSystem.readDirectory(folderPath);
       if (success) {
-        console.log(`📂 Loaded Playlist: ${playlistName}, Files:`, files);
-
         dispatch(updatePlaylist({ playlistName, songs: files }));
         dispatch(setActivePlaylist(playlistName));
         dispatch(setCurrentSong(files.length > 0 ? files[0] : null));
 
         window.electron.setPlaylist(files);
       } else {
-        console.warn(`⚠️ No files found in playlist: ${playlistName}`);
         dispatch(setActivePlaylist(playlistName));
         dispatch(setCurrentSong(null));
       }
-    } catch (error) {
-      console.error("❌ Error reading directory:", error);
+    } catch {
       dispatch(setActivePlaylist(playlistName));
       dispatch(setCurrentSong(null));
     }
@@ -202,7 +198,7 @@ const AppContent = ({
         return (
           <button
             key={num}
-            className={`extra-button ${num}`} // Add unique class
+            className={`extra-button ${num}`}
             onClick={() => handleSilverToggle(num)}
           >
             <IconComponent className={activeSilverButton === num ? "active-red" : ""} />

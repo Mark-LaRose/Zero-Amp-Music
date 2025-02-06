@@ -1,3 +1,5 @@
+/* stlying for main app */
+
 .player-container {
     display: flex;
     flex-direction: column;
@@ -106,7 +108,7 @@
     font-size: 16px;
     padding: 10px;
     margin-top: -8px;
-    position: relative; /* Ensures proper alignment */
+    position: relative;
 }
 
 .scrolling-text {
@@ -137,7 +139,7 @@
   
 .volume-slider {
     transform: rotate(-90deg);
-    width: 140px; /* Increase width for a longer track */
+    width: 140px;
     appearance: none;
     background-color: black;
 }
@@ -166,9 +168,9 @@
 
 .player-button.shuffle-button {
     font-size: 36px;
-    color: rgb(39, 39, 39); /* Default color */
+    color: rgb(39, 39, 39);
 }
 
 .player-button.shuffle-button.shuffle-active {
-    color: rgb(95, 95, 95) !important; /* Light grey when shuffle is ON */
+    color: rgb(95, 95, 95) !important;
 }

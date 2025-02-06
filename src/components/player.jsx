@@ -10,7 +10,7 @@ import {
   playPreviousSong,
   shuffleSong,
   updatePlaylist,
-  toggleShuffle, // Shuffle toggle
+  toggleShuffle,
 } from "../redux/playlistSlice";
 import "../styles/player.css";
 import path from "path-browserify";
@@ -27,7 +27,6 @@ const Player = () => {
   // Automatically play the next song when the current one ends
   useEffect(() => {
     window.electron.audio.onSongEnd(() => {
-      console.log("🎵 Song ended, calling playNextSong()");
       if (isShuffle) {
         dispatch(shuffleSong());
       } else {
@@ -38,9 +37,8 @@ const Player = () => {
 
   // Play new song when `currentSong` updates
   useEffect(() => {
-    if (currentSong && isPlaying) { // Only play if user has pressed play
+    if (currentSong && isPlaying) {
       const songPath = path.join(baseDir, activePlaylist, currentSong);
-      console.log(`▶️ Playing: ${songPath}`);
       window.electron.audio.play(songPath);
     }
   }, [currentSong, isPlaying, dispatch, activePlaylist, baseDir]);
@@ -52,19 +50,16 @@ const Player = () => {
     try {
       const { success, files } = await window.electron.fileSystem.readDirectory(folderPath);
       if (success) {
-        console.log(`📂 Loaded Playlist: ${playlistName}, Files:`, files);
   
         dispatch(updatePlaylist({ playlistName, songs: files }));
         dispatch(setActivePlaylist(playlistName));
-        dispatch(setCurrentSong(files.length > 0 ? files[0] : null)); // Set, but don't auto-play
+        dispatch(setCurrentSong(files.length > 0 ? files[0] : null));
         window.electron.setPlaylist(files);
       } else {
-        console.warn(`⚠️ Failed to load playlist: ${playlistName}`);
         dispatch(setActivePlaylist(playlistName));
         dispatch(setCurrentSong(null));
       }
     } catch (error) {
-      console.error("❌ Error reading directory:", error);
       dispatch(setActivePlaylist(playlistName));
       dispatch(setCurrentSong(null));
     }
@@ -76,7 +71,6 @@ const Player = () => {
       dispatch(setCurrentSong(firstSong));
     } else if (currentSong) {
       const songPath = path.join(baseDir, activePlaylist, currentSong);
-      console.log(`▶️ Playing: ${songPath}`);
       window.electron.audio.play(songPath);
       dispatch(playSong());
     }
@@ -93,7 +87,6 @@ const Player = () => {
   };
 
   const handleNext = () => {
-    console.log("⏭️ Next song triggered");
     if (isShuffle) {
       dispatch(shuffleSong());
     } else {
@@ -102,7 +95,6 @@ const Player = () => {
   };
 
   const handlePrevious = () => {
-    console.log("⏮️ Previous song triggered");
     dispatch(playPreviousSong());
     window.electron.audio.playPrevious();
   };

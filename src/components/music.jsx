@@ -16,15 +16,11 @@ const Music = ({ isVisible }) => {
   const loadSongs = async () => {
     const baseDir = window.electron.baseDir || "";
     const folderPath = path.join(baseDir, currentPlaylist);
+  
     try {
       const { success, files } = await window.electron.fileSystem.readDirectory(folderPath);
-      if (success) {
-        setSongs(files);
-      } else {
-        setSongs([]);
-      }
-    } catch (error) {
-      console.error("Error loading songs:", error);
+      setSongs(success ? files : []);
+    } catch {
       setSongs([]);
     }
   };
@@ -39,36 +35,31 @@ const Music = ({ isVisible }) => {
         filters: [{ name: "Audio Files", extensions: ["mp3", "wav"] }],
         properties: ["openFile", "multiSelections"],
       });
-
+  
       if (!canceled && filePaths) {
-        const baseDir = window.electron.baseDir || ""; // Defined in preload.js
+        const baseDir = window.electron.baseDir || "";
         const targetFolder = `${baseDir}\\library`;
-
+  
         filePaths.forEach((filePath) => {
-          const songName = filePath.split(/[/\\]/).pop(); // Extract file name
+          const songName = filePath.split(/[\\/]/).pop();
           const targetPath = `${targetFolder}\\${songName}`;
           window.electron.fileSystem.copyFile(filePath, targetPath);
-          console.log(`File copied: ${filePath} -> ${targetPath}`); // Debugging
         });
-        loadSongs(); // Refresh song list
+  
+        loadSongs();
       }
-    } catch (error) {
-      console.error("Error adding music:", error);
-    }
+    } catch {}
   };
 
   const handleDoubleClick = (song) => {
-    const baseDir = window.electron.baseDir || ""; // Ensure baseDir is defined
-    const songPath = path.join(baseDir, currentPlaylist, song); // Use currentPlaylist
-
+    const baseDir = window.electron.baseDir || "";
+    const songPath = path.join(baseDir, currentPlaylist, song);
+  
     try {
-        window.electron.audio.play(songPath);
-        dispatch(setCurrentSong(song)); // Update Redux with the current song
-        setSelectedSong(song); // Local state tracking
-        console.log(`Started playing: ${songPath}`);
-    } catch (error) {
-        console.error("Error starting playback:", error);
-    }
+      window.electron.audio.play(songPath);
+      dispatch(setCurrentSong(song)); 
+      setSelectedSong(song);
+    } catch {}
   };
 
   const handleRightClick = (event, song) => {
@@ -76,13 +67,13 @@ const Music = ({ isVisible }) => {
 
     // Get the window height and click position
     const windowHeight = window.innerHeight;
-    const contextMenuHeight = 150; // Approximate height of the context menu (adjust if needed)
+    const contextMenuHeight = 150;
     const isLowerHalf = event.clientY > windowHeight * 0.6;
 
     // Set the context menu position dynamically
     const yPosition = isLowerHalf
-      ? event.clientY - contextMenuHeight // Render upwards
-      : event.clientY; // Render downwards
+      ? event.clientY - contextMenuHeight
+      : event.clientY;
 
     setContextMenu({
       visible: true,
@@ -93,7 +84,6 @@ const Music = ({ isVisible }) => {
   };
 
   const handleAddToPlaylist = (playlist) => {
-    console.log(`Adding "${contextMenu.song}" to Playlist ${playlist}`);
     const baseDir = window.electron.baseDir || "";
     const sourcePath = path.join(baseDir, currentPlaylist, contextMenu.song);
     const targetPath = path.join(baseDir, playlist, contextMenu.song);
@@ -103,33 +93,31 @@ const Music = ({ isVisible }) => {
   };
 
   const submitRename = async () => {
-    if (!renameModal.newName.trim()) return;
-
+    if (!renameModal?.newName?.trim()) return;
+  
     const baseDir = window.electron.baseDir || "";
-    const oldPath = path.join(baseDir, currentPlaylist, renameModal.oldName);
-    const newPath = path.join(baseDir, currentPlaylist, renameModal.newName.trim());
-
+    const oldPath = path.join(baseDir, currentPlaylist, renameModal?.oldName);
+    const newPath = path.join(baseDir, currentPlaylist, renameModal?.newName?.trim());
+  
     const result = await window.electron.fileSystem.rename(oldPath, newPath);
+  
     if (result.success) {
-      console.log(`File renamed to ${renameModal.newName}`);
       loadSongs();
-    } else {
-      console.error("Rename failed:", result.error);
     }
+  
     setRenameModal({ visible: false, oldName: "", newName: "" });
   };
 
   const confirmDelete = async () => {
     const baseDir = window.electron.baseDir || "";
-    const songPath = path.join(baseDir, currentPlaylist, deleteModal.song);
-
+    const songPath = path.join(baseDir, currentPlaylist, deleteModal?.song);
+  
     const result = await window.electron.fileSystem.delete(songPath);
+    
     if (result.success) {
-      console.log(`File deleted: ${deleteModal.song}`);
       loadSongs();
-    } else {
-      console.error("Delete failed:", result.error);
     }
+  
     setDeleteModal({ visible: false, song: "" });
   };
 
@@ -138,8 +126,8 @@ const Music = ({ isVisible }) => {
   };
 
   const handleSelectSong = (song) => {
-    dispatch(setCurrentSong(song)); // Update Redux with the selected song
-    setSelectedSong(song); // Local state tracking
+    dispatch(setCurrentSong(song));
+    setSelectedSong(song);
   };
 
   if (!isVisible) return null;

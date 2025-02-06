@@ -1,16 +1,15 @@
 import { configureStore } from '@reduxjs/toolkit';
-import playlistReducer from './playlistSlice'; // Import your playlist logic
+import playlistReducer from './playlistSlice';
 
 const store = configureStore({
   reducer: {
-    playlist: playlistReducer, // Register playlist slice
+    playlist: playlistReducer,
   },
-  // Optional: Adding middleware and devTools configurations
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: false, // Can adjust depending on data handling needs
+      serializableCheck: false,
     }),
-  devTools: process.env.NODE_ENV !== 'production', // Enable Redux DevTools in development mode
+  devTools: process.env.NODE_ENV !== 'production',
 });
 
 export default store;

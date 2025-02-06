@@ -3,18 +3,18 @@ import path from "path-browserify";
 
 const initialState = {
   playlists: {
-    library: [], // Default Library
+    library: [],
     1: [],
     2: [],
     3: [],
     4: [],
     5: [],
   },
-  activePlaylist: "library", // Default active playlist
-  currentSong: null, // Currently playing song
-  isPlaying: false, // Playback state
-  volume: 50, // Default volume
-  isShuffle: false, // Shuffle mode state
+  activePlaylist: "library",
+  currentSong: null,
+  isPlaying: false,
+  volume: 50,
+  isShuffle: false,
 };
 
 const playlistSlice = createSlice({
@@ -24,7 +24,6 @@ const playlistSlice = createSlice({
     // Toggle shuffle mode
     toggleShuffle: (state) => {
       state.isShuffle = !state.isShuffle;
-      console.log(`🔀 Shuffle Mode: ${state.isShuffle ? "ON" : "OFF"}`);
     },
 
     // Select active playlist and ensure it's properly loaded
@@ -34,37 +33,28 @@ const playlistSlice = createSlice({
       const playlist = state.playlists[playlistName] || [];
 
       if (playlist.length > 0) {
-        state.currentSong = playlist[0]; // Set first song, but don't autoplay
-        state.isPlaying = false; // Ensure it doesn't start playing automatically
+        state.currentSong = playlist[0];
+        state.isPlaying = false;
       } else {
         state.currentSong = null;
       }
-
-      console.log(`🎵 Active Playlist: ${state.activePlaylist}, First Song: ${state.currentSong || "None"}`);
     },
 
-    // Stop playback when silver button "3" is deselected or "1"/"2" is selected
+    // Stop playback
     stopPlaybackOnSilverButton: (state) => {
       state.isPlaying = false;
       state.currentSong = null;
-      console.log("⏹️ Stopping music due to silver button selection/deselection.");
     },
 
     // Set a specific song as the current one and start playing
     setCurrentSong: (state, action) => {
       state.currentSong = action.payload;
-      if (state.isPlaying) {
-        console.log(`🎶 Now Playing: ${state.currentSong}`);
-      } else {
-        console.log(`🎵 Selected: ${state.currentSong} (waiting for user to hit play)`);
-      }
     },
 
     // Play current song
     playSong: (state) => {
       if (state.currentSong) {
         state.isPlaying = true;
-        console.log(`▶️ Playing: ${state.currentSong}`);
       }
     },
 
@@ -72,7 +62,6 @@ const playlistSlice = createSlice({
     pauseSong: (state) => {
       if (state.isPlaying) {
         state.isPlaying = false;
-        console.log(`⏸️ Paused: ${state.currentSong}`);
       }
     },
 
@@ -80,10 +69,9 @@ const playlistSlice = createSlice({
     stopSong: (state) => {
       state.isPlaying = false;
       state.currentSong = null;
-      console.log("⏹️ Stopped playback.");
     },
 
-    // ✅ **Play next song (shuffle-aware) with correct path resolution**
+    // **Play next song (shuffle-aware) with correct path resolution**
     playNextSong: (state) => {
       const playlist = state.playlists[state.activePlaylist] || [];
       if (playlist.length > 0) {
@@ -97,23 +85,19 @@ const playlistSlice = createSlice({
           nextIndex = (currentIndex + 1) % playlist.length;
         }
 
-        // 🔹 Ensure we format the full path correctly
+        // Ensure we format the full path correctly
         const baseDir = window.electron.baseDir || "";
         const correctPath = path.join(baseDir, state.activePlaylist === "library" ? "library" : state.activePlaylist, playlist[nextIndex]);
 
-        console.log(`⏭️ Next Song Path: ${correctPath}`); // Debugging output
-
-        state.currentSong = playlist[nextIndex]; // Store just the filename
+        state.currentSong = playlist[nextIndex];
         state.isPlaying = true;
 
         // Notify Electron to play next song
         window.electron.audio.play(correctPath);
-      } else {
-        console.warn("⚠️ No songs in the playlist.");
       }
     },
 
-    // ✅ **Play previous song and loop if needed with correct path**
+    // **Play previous song and loop if needed with correct path**
     playPreviousSong: (state) => {
       const playlist = state.playlists[state.activePlaylist] || [];
       if (playlist.length > 0) {
@@ -127,15 +111,9 @@ const playlistSlice = createSlice({
           state.currentSong = playlist[prevIndex];
           state.isPlaying = true;
 
-          console.log(`⏮️ Previous Song Path: ${correctPath}`);
-
           // Notify Electron to play previous song
           window.electron.audio.play(correctPath);
-        } else {
-          console.warn("⚠️ Current song not found in playlist.");
         }
-      } else {
-        console.warn("⚠️ No songs in the playlist.");
       }
     },
 
@@ -149,9 +127,6 @@ const playlistSlice = createSlice({
         } while (playlist[randomIndex] === state.currentSong);
         state.currentSong = playlist[randomIndex];
         state.isPlaying = true;
-        console.log(`🔀 Shuffled Song: ${state.currentSong}`);
-      } else {
-        console.warn("⚠️ No songs in the playlist to shuffle.");
       }
     },
 
@@ -160,11 +135,9 @@ const playlistSlice = createSlice({
       const { playlistName, songs } = action.payload;
       state.playlists[playlistName] = songs;
 
-      console.log(`📂 Updated Playlist: ${playlistName}, Songs: ${songs.length}`);
-
       // Ensure active playlist gets updated if needed
       if (state.activePlaylist === playlistName && songs.length > 0) {
-        state.currentSong = songs[0]; // Auto-select first song
+        state.currentSong = songs[0];
       }
     },
   },
@@ -181,7 +154,7 @@ export const {
   shuffleSong,
   updatePlaylist,
   toggleShuffle,
-  stopPlaybackOnSilverButton, // Exported new stop function
+  stopPlaybackOnSilverButton,
 } = playlistSlice.actions;
 
 export default playlistSlice.reducer;

@@ -1,3 +1,5 @@
+/* Styling for visualizer window */
+
 @font-face {
     font-family: 'Stalemate';
     src: url('../../public/fonts/Stalemate-Regular.ttf') format('truetype');
@@ -6,7 +8,7 @@
 }
 
 .visual-container {
-    position: relative; /* Allows child absolute positioning */
+    position: relative;
     width: 80%;
     height: 200px;
     display: flex;
@@ -16,10 +18,10 @@
 }
 
 .visualizer-canvas {
-    position: absolute; /* Freely move the canvas */
-    top: 10px; /* Adjust as needed */
-    left: 50%; /* Center horizontally */
-    transform: translateX(-50%); /* Center horizontally */
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
     width: 35%;
     height: 200px;
     border: 2px solid rgb(39, 39, 39);
@@ -31,7 +33,7 @@
     font-size: 20px;
     color: var(--theme-color);
     text-align: center;
-    margin-top: -182px; /* Adjust as needed */
+    margin-top: -182px;
     z-index: 500;
     transform: scaleX(1.5);
 }

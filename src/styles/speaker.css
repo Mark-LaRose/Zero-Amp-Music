@@ -1,3 +1,5 @@
+/* Styling for buttons and speakers */
+
 .speaker-container {
     display: flex;
     justify-content: space-between;
@@ -83,7 +85,7 @@ h3 {
 
 .random-color-button {
     position: absolute;
-    top: 20px; /* Adjust this value to move the button down */
+    top: 20px;
     right: 279px;
     border: none;
     border-radius: 50%;
@@ -118,7 +120,7 @@ h3 {
 }
 
 .extra-button {
-    top: 105px; /* Adjust position for stacking buttons */
+    top: 105px;
 }
 
 .extra-button:nth-child(7) {
@@ -129,16 +131,16 @@ h3 {
     top: 149px;
 }
 
-/* Styling for the new horizontal buttons */
+/* Styling for the horizontal buttons */
 .h-button {
     position: absolute;
     top: 217px;
-    bottom: 40px; /* Adjust as needed */
-    left: 320px; /* Adjust as needed */
-    width: 60px; /* Adjust size */
-    height: 10px; /* Adjust size */
-    border-radius: 12px; /* Rounded corners */
-    background-color: rgb(39, 39, 39); /* Match the volume bar color */
+    bottom: 40px;
+    left: 320px;
+    width: 60px;
+    height: 10px;
+    border-radius: 12px;
+    background-color: rgb(39, 39, 39);
     color: white;
     border: none;
     cursor: pointer;
@@ -153,12 +155,12 @@ h3 {
 .h2-button {
     position: absolute;
     top: 217px;
-    bottom: 40px; /* Adjust as needed */
-    left: 391px; /* Adjust as needed */
-    width: 60px; /* Adjust size */
-    height: 10px; /* Adjust size */
-    border-radius: 12px; /* Rounded corners */
-    background-color: rgb(39, 39, 39); /* Match the volume bar color */
+    bottom: 40px;
+    left: 391px;
+    width: 60px;
+    height: 10px;
+    border-radius: 12px;
+    background-color: rgb(39, 39, 39);
     color: white;
     border: none;
     cursor: pointer;
@@ -172,12 +174,12 @@ h3 {
 .h3-button {
     position: absolute;
     top: 217px;
-    bottom: 40px; /* Adjust as needed */
-    left: 461px; /* Adjust as needed */
-    width: 60px; /* Adjust size */
-    height: 10px; /* Adjust size */
-    border-radius: 12px; /* Rounded corners */
-    background-color: rgb(39, 39, 39); /* Match the volume bar color */
+    bottom: 40px;
+    left: 461px;
+    width: 60px;
+    height: 10px;
+    border-radius: 12px;
+    background-color: rgb(39, 39, 39);
     color: white;
     border: none;
     cursor: pointer;
@@ -192,12 +194,12 @@ h3 {
 .h4-button {
     position: absolute;
     top: 217px;
-    bottom: 40px; /* Adjust as needed */
-    left: 532px; /* Adjust as needed */
-    width: 60px; /* Adjust size */
-    height: 10px; /* Adjust size */
-    border-radius: 12px; /* Rounded corners */
-    background-color: rgb(39, 39, 39); /* Match the volume bar color */
+    bottom: 40px;
+    left: 532px;
+    width: 60px;
+    height: 10px;
+    border-radius: 12px;
+    background-color: rgb(39, 39, 39);
     color: white;
     border: none;
     cursor: pointer;
@@ -212,12 +214,12 @@ h3 {
 .h5-button {
     position: absolute;
     top: 217px;
-    bottom: 40px; /* Adjust as needed */
-    left: 604px; /* Adjust as needed */
-    width: 60px; /* Adjust size */
-    height: 10px; /* Adjust size */
-    border-radius: 12px; /* Rounded corners */
-    background-color: rgb(39, 39, 39); /* Match the volume bar color */
+    bottom: 40px;
+    left: 604px;
+    width: 60px;
+    height: 10px;
+    border-radius: 12px;
+    background-color: rgb(39, 39, 39);
     color: white;
     border: none;
     cursor: pointer;
@@ -231,7 +233,7 @@ h3 {
 
 .h-button span.active-green {
     color: rgb(0, 128, 0);
-    font-weight: bold; /* Optional for emphasis */
+    font-weight: bold;
 }
 
 .active-red {
@@ -243,25 +245,25 @@ h3 {
     font-size: 50px;
     color: var(--theme-color);
     text-align: center;
-    margin-top: 20px; /* Adjust as needed */
+    margin-top: 20px;
 }
 
 .music-button svg {
-    transform: translateY(3px); /* Moves the icon down */
+    transform: translateY(3px);
 }
 
 .extra-3 svg {
-    transform: translate(-2px, 2px); /* Moves left and down slightly */
+    transform: translate(-2px, 2px);
 }
 
 .extra-2 svg {
-    transform: translate(-3px, 2px); /* Moves it slightly up and to the left */
-    width: 22px;  /* Increase size slightly */
+    transform: translate(-3px, 2px);
+    width: 22px;
     height: 22px;
 }
 
 .extra-1 svg {
-    transform: translateY(0px) translateX(-2px); /* Adjust Y for vertical centering */
+    transform: translateY(0px) translateX(-2px);
     width: 22px;
     height: 22px;
     display: flex;
@@ -271,8 +273,8 @@ h3 {
 }
 
 .random-color-button {
-    font-size: 22px; /* Increase font size */
-    font-weight: bold; /* Make it bold */
+    font-size: 22px;
+    font-weight: bold;
     display: flex;
     align-items: center;
     justify-content: center;
